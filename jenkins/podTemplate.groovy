@@ -2,15 +2,15 @@ podTemplate(
     name: 'openshift-pod',
     label: 'openshift-pod',
     cloud: 'openshift',
-    serviceAccount: OPENSHIFT_SERVICE_ACCOUNT,
+    serviceAccount: 'jenkins-osci',
     idleMinutes: 0,
-    namespace: OPENSHIFT_NAMESPACE,
+    namespace: 'osci',
 //     yaml: downstreamUtils.nodeSelector2Yaml(), -- this is just weird...
     containers: [
         containerTemplate(
             name: 'jnlp',
             alwaysPullImage: false,
-            image: '',
+            image: 'registry.fedoraproject.org/fedora:32',
             ttyEnabled: false,
             args: '${computer.jnlpmac} ${computer.name}',
             envVars: [

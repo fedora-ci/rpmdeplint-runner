@@ -2,7 +2,11 @@
 
 def imageName = ''
 
-load 'jenkins/podTemplate.groovy'
+
+node('master') {
+    checkout scm
+    load 'jenkins/podTemplate.groovy'
+}
 
 
 node('openshift-pod') {
