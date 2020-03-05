@@ -3,37 +3,55 @@
 def imageName = ''
 
 
-node('master') {
-    checkout scm
-    load 'jenkins/podTemplate.groovy'
-}
+pipeline {
 
-
-node('openshift-pod') {
-
-    stage('Checkout') {
-        checkout scm
-    }
-
-    stage('Build') {
-        // pass
-    }
-
-    stage('Test') {
-        // pass
-    }
-
-    stage('Push') {
-        // pass
-    }
-
-    if (env.BRANCH_NAME == 'master') {
-        stage('Open Pull Requests') {
-            // pass
+    agent {
+        node {
+            label 'fedora-ci-agent'
         }
-    } else {
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Build...'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Test...'
+            }
+        }
+
+        stage('Push') {
+            steps {
+                echo 'Push...'
+            }
+        }
+
+        stage('Open Pull Requests') {
+            when {
+                expression { env.BRANCH_NAME == 'master' }
+            }
+            steps {
+                echo 'Open Pull Requests...'
+            }
+        }
+
         stage('Add GitHub Comment') {
-            // pass
+            when {
+                expression { env.BRANCH_NAME != 'master' }
+            }
+            steps {
+                echo 'Add GitHub Comment...'
+            }
         }
     }
 }
