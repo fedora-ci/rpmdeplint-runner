@@ -1,5 +1,7 @@
 #!groovy
 
+@Library('github.com/msrb/jenkins-pipeline-library@image-push') _
+
 def imageName = ''
 
 
@@ -20,7 +22,15 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Build...'
+                 buildImageAndPushToRegistry(
+                    imageName: 'quay.io/msrb/rpmdeplint',
+                    imageTag: '8f3acb7',
+                    pushSecret: 'msrb-quay',
+                    gitUrl: 'https://github.com/fedora-ci/rpmdeplint-image.git',
+                    gitRef: 'master',
+                    buildName: 'rpmdeplint-image',
+                    openshiftProject: 'osci'
+                 )
             }
         }
 
