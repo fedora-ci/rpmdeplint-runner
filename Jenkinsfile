@@ -1,66 +1,65 @@
 #!groovy
 
-@Library('github.com/msrb/jenkins-pipeline-library@image-push') _
+@Library('github.com/msrb/jenkins-pipeline-library@prototype') _
 
-def imageName = ''
+def imageName = 'quay.io/msrb/rpmdeplint'
+def imageTag
+
+def commitId
+def gitUrl
 
 
 pipeline {
 
     agent {
-        node {
-            label 'fedora-ci-agent'
-        }
+        label 'fedora-ci-agent'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Init') {
             steps {
-                checkout scm
+                script {
+                    commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    gitUrl = getGitUrl()
+                }
             }
         }
 
-        stage('Build') {
+        stage('Build and Push') {
             steps {
-                 buildImageAndPushToRegistry(
-                    imageName: 'quay.io/msrb/rpmdeplint',
-                    imageTag: '8f3acb7',
-                    pushSecret: 'msrb-quay',
-                    gitUrl: 'https://github.com/fedora-ci/rpmdeplint-image.git',
-                    gitRef: 'master',
+                script {
+                    if (isPullRequest()) {
+                        imageTag = "pr-${env.CHANGE_ID}"
+                    } else {
+                        imageTag = commitId
+                    }
+                }
+
+                buildImageAndPushToRegistry(
+                    imageName: imageName,
+                    imageTag: imageTag,
+                    pushSecret: env.QUAY_PUSH_SECRET_NAME,
+                    gitUrl: gitUrl,
+                    gitRef: commitId,
                     buildName: 'rpmdeplint-image',
-                    openshiftProject: 'osci'
-                 )
+                    openshiftProject: env.OPENSHIFT_PROJECT_NAME
+                )
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Test...'
+                sh('./runtest.sh')
             }
         }
+    }
 
-        stage('Push') {
-            steps {
-                echo 'Push...'
-            }
-        }
-
-        stage('Open Pull Requests') {
-            when {
-                expression { env.BRANCH_NAME == 'master' }
-            }
-            steps {
-                echo 'Open Pull Requests...'
-            }
-        }
-
-        stage('Add GitHub Comment') {
-            when {
-                expression { env.BRANCH_NAME != 'master' }
-            }
-            steps {
-                echo 'Add GitHub Comment...'
+    post { 
+        success {
+            script {
+                if (isPullRequest()) {
+                    echo 'TODO: comment on the pull request in GitHub...'
+                }
             }
         }
     }
