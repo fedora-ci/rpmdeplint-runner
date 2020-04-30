@@ -155,7 +155,7 @@ def _run_test(repos, arch):
 def main():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument("--task-id", "-t", dest="task_id", required=True,
-                        action="append", type=int, help="Koji task id")
+                        action="append", type=str, help="A comma-separated list of Koji task IDs")
     parser.add_argument("--release", "-r", dest="release", required=True,
                         help="release, like f31")
     args = parser.parse_args()
@@ -196,10 +196,12 @@ def main():
     base_koji_repo_url = "https://kojipkgs.fedoraproject.org/repos/f{0}-build/latest".format(fed_version)
 
     builds = []
-    for task_id in args.task_id:
-        task_builds = koji_hub.listBuilds(taskID=task_id)
-        if task_builds:
-            builds.extend(task_builds)
+    for task_id_str in args.task_id:
+        task_id_list = [int(x) for x in task_id_str.strip().split(',')]
+        for task_id  in task_id_list:
+            task_builds = koji_hub.listBuilds(taskID=task_id)
+            if task_builds:
+                builds.extend(task_builds)
 
     if not builds:
         _print_log("FAIL: Could not get build", "console.log")
