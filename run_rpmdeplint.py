@@ -199,6 +199,14 @@ def main():
     for task_id_str in args.task_id:
         task_id_list = [int(x) for x in task_id_str.strip().split(',')]
         for task_id  in task_id_list:
+            # first check if the task exists and that it succeeded
+            task_info = koji_hub.getTaskInfo(task_id) or {}
+            if not task_info:
+                 _print_log("FAIL: Koji task {0} doesn't exist".format(task_id), "console.log")
+                 sys.exit(1)
+            if not task_info['state'] == 2:
+                _print_log("FAIL: Koji task {0} either failed or is still in progress".format(task_id), "console.log")
+                sys.exit(1)
             task_builds = koji_hub.listBuilds(taskID=task_id)
             if task_builds:
                 builds.extend(task_builds)
