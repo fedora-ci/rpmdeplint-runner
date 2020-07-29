@@ -32,24 +32,24 @@ def _run(cmd, logfile=None):
     print("INFO: Running: '{0}'...".format(cmd))
     sp = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     # Flush stdout before command completes
-    stdout = b""
-    while sp.poll() is None:
-        new_data = sp.stdout.readline()
-        stdout += new_data
-        new_str = new_data.decode('ascii', 'ignore')
-        sys.stdout.write(new_str)
-        sys.stdout.flush()
-        # Just print any stderr messages, don't save it to logifle
-        sys.stderr.flush()
-        if logfile and new_data:
-            with open(logfile, 'a') as _file:
-                _file.write('{0}'.format(new_str))
+    # stdout = b""
+    # while sp.poll() is None:
+    #     new_data = sp.stdout.readline()
+    #     stdout += new_data
+    #     new_str = new_data.decode('ascii', 'ignore')
+    #     sys.stdout.write(new_str)
+    #     sys.stdout.flush()
+    #     # Just print any stderr messages, don't save it to logifle
+    #     sys.stderr.flush()
+    #     if logfile and new_data:
+    #         with open(logfile, 'a') as _file:
+    #             _file.write('{0}'.format(new_str))
 
-    #stdout, stderr = p.communicate()
+    stdout, stderr = p.communicate()
     #sys.stdout.flush()
     #sys.stderr.flush()
 
-    return sp.returncode
+    return p.returncode
 
 def _query_url(url, retry=10):
     exception = None
