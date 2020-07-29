@@ -145,7 +145,8 @@ def _run_test(repos, arch):
         if os.path.isfile(repo_file_log) and (_run("grep '{0}' {1}".format(splitted_repo[1], repo_file_log)) != 0):
             _run("echo {0} >> {1}".format(splitted_repo[1], repo_file_log))
 
-    testcases = ["check-sat", "check-repoclosure", "check-conflicts", "check-upgrade"]
+    # skipping "check-conflicts" test for now: https://github.com/fedora-ci/rpmdeplint-image/issues/5
+    testcases = ["check-sat", "check-repoclosure", "check-upgrade"]
 
     for test in testcases:
         test_log_name = "{0}-{1}".format(arch, test)
