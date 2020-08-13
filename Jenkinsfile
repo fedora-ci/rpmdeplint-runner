@@ -19,7 +19,7 @@ pipeline {
         stage('Init') {
             steps {
                 script {
-                    commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    shortCommitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                     gitUrl = getGitUrl()
                 }
             }
@@ -31,7 +31,7 @@ pipeline {
                     if (isPullRequest()) {
                         imageTag = "pr-${env.CHANGE_ID}"
                     } else {
-                        imageTag = commitId
+                        imageTag = shortCommitId
                     }
                 }
 
@@ -40,7 +40,7 @@ pipeline {
                     imageTag: imageTag,
                     pushSecret: env.QUAY_PUSH_SECRET_NAME,
                     gitUrl: gitUrl,
-                    gitRef: commitId,
+                    gitRef: shortCommitId,
                     buildName: 'rpmdeplint-image',
                     openshiftProject: env.OPENSHIFT_PROJECT_NAME
                 )

@@ -19,16 +19,18 @@ TODO: we should validate that the final image is not completely broken; however 
 You can run and test the image locally. Simply run:
 
 ```shell
-$ podman run -ti --rm fedoraci/rpmdeplint:devel /rpmdeplint/run_rpmdeplint.py --help
-usage: run_rpmdeplint.py [-h] --task-id TASK_ID --release RELEASE
+$ podman run -ti --rm fedoraci/rpmdeplint:devel /rpmdeplint_runner/run.py --help
+usage: run.py [-h] {prepare,run-test} ...
+
+Run rpmdeplint tests
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --task-id TASK_ID, -t TASK_ID
-                        Koji task id
-  --release RELEASE, -r RELEASE
-                        release, like f31
+  -h, --help          show this help message and exit
 
+commands:
+  {prepare,run-test}
+    prepare           prepare given workdir for running tests
+    run-test          run the given rpmdeplint test
 ```
 
 ### Note about promoting to production
