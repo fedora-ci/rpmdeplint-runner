@@ -31,6 +31,7 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
     """
     version = get_version(release_id)
     repo_url = RAWHIDE_REPO_URL.format(arch=arch)
+    debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(version=version, arch=arch)
     releases = get_releases_from_bodhi(state='pending')
 
     if not is_rawhide(version, releases):
