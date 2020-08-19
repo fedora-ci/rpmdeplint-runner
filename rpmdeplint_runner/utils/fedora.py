@@ -38,6 +38,8 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
         arch = 'armhfp'
 
     version = get_version(release_id)
+    repo_name = 'fedora-{version}-{arch}'.format(version=version, arch=arch)
+    debug_repo_name = 'fedora-debuginfo-{version}-{arch}'.format(version=version, arch=arch)
     repo_url = RAWHIDE_REPO_URL.format(arch=arch)
     debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(version=version, arch=arch)
     releases = get_releases_from_bodhi()
@@ -45,15 +47,11 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
     if not is_rawhide(version, releases):
         if is_current(version, releases):
             state = version
-            repo_name = 'fedora-{version}-{arch}'.format(version=version, arch=arch)
             repo_url = REPO_URL_TEMPLATE.format(state=state, version=version, arch=arch)
-            debug_repo_name = 'fedora-debuginfo-{version}-{arch}'.format(version=version, arch=arch)
             debug_repo_url = DEBUGINFO_REPO_URL_TEMPLATE.format(state=state, version=version, arch=arch)
         else:
             state = 'branched'
-            repo_name = 'fedora-{version}-{arch}'.format(version=version, arch=arch)
             repo_url = REPO_URL_TEMPLATE.format(state=state, version=version, arch=arch)
-            debug_repo_name = 'fedora-debuginfo-{version}-{arch}'.format(version=version, arch=arch)
             debug_repo_url = DEBUGINFO_REPO_URL_TEMPLATE.format(state=state, version=version, arch=arch)
 
             # we need to check that this pre-release repo already exists
