@@ -90,8 +90,8 @@ def fix_arches(arches):
 
 def run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir):
     repo_params = []
-    for index, url in enumerate(repo_urls):
-        repo_params.extend(['--repo', 'repo{idx},{url}'.format(idx=index, url=url)])
+    for name, url in repo_urls.items():
+        repo_params.extend(['--repo', '{name},{url}'.format(name=name, url=url)])
 
     # pathlib.Path -> str
     rpms_list = [str(x) for x in rpms_list]

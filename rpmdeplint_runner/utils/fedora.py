@@ -27,8 +27,10 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
     :param arch: str, architecture
     :param exclude_buildroot: bool, exclude buildroot repos or not
     :param exclude_debuginfo: bool, exclude debuginfo repos or not
-    :return: list, a list of repo URLs
+    :return: dict, a dict where keys are repo names and values are repo URLs
     """
+
+    result = {}
 
     if arch == 'armv7hl':
         # from some unknown reason, Koji uses "armv7hl" identifier, but composes use "armhfp"...
@@ -41,7 +43,9 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
     releases = get_releases_from_bodhi(state='pending')
 
     if not is_rawhide(version, releases):
+        repo_name = 'fedora-{version}-{arch}'
         repo_url = REPO_URL_TEMPLATE.format(version=version, arch=arch)
+        debug_repo_name = 'fedora-debuginfo-{version}-{arch}'
         debug_repo_url = DEBUGINFO_REPO_URL_TEMPLATE.format(version=version, arch=arch)
         # there are 2 cases when the repo URL will not exist:
         # the version is too old and the repo is simply
@@ -56,12 +60,13 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
             else:
                 raise ValueError('Repo for release "{release_id}" doesn\'t exist'.format(release_id=release_id))
 
-    result = [repo_url]
+    result[repo_name] = repo_url
 
     if not exclude_debuginfo:
-        result.append(debug_repo_url)
+        result[debug_repo_name] = debug_repo_url
 
     if not exclude_buildroot:
+        buildroot_repo_name = 'fedora-buildroot-{version}-{arch}'
         buildroot_repo_url = BUILDROOT_REPO_URL_TEMPLATE.format(version=version, repo_id='latest', arch=arch)
         # there should be a file called "repo.json" in the repository directory; we fetch the file and extract
         # the real repository id from it. That way we don't have to rely on the ever-changing "latest" identifier
@@ -69,7 +74,7 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
         response, _ = http_get(buildroot_repo_url + 'repo.json', as_json=True)
         if response and response.get('id'):
             buildroot_repo_url = BUILDROOT_REPO_URL_TEMPLATE.format(version=version, repo_id=response.get('id'), arch=arch)
-        result.append(buildroot_repo_url)
+        result[buildroot_repo_name] = buildroot_repo_url
 
     return result
 
