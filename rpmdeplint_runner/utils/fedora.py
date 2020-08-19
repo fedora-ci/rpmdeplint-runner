@@ -6,7 +6,7 @@ import re
 
 from rpmdeplint_runner.utils import http_get, run_command, fix_arches
 
-BUILDROOT_REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/repos/f{version}-build/latest/{arch}/'
+BUILDROOT_REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/repos/f{version}-build/{repo_id}/{arch}/'
 
 REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/compose/branched/latest-Fedora-{version}/compose/Everything/{arch}/os/'
 DEBUGINFO_REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/compose/branched/latest-Fedora-{version}/compose/Everything/{arch}/debug/tree/'
@@ -62,7 +62,14 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
         result.append(debug_repo_url)
 
     if not exclude_buildroot:
-        result.append(BUILDROOT_REPO_URL_TEMPLATE.format(version=version, arch=arch))
+        buildroot_repo_url = BUILDROOT_REPO_URL_TEMPLATE.format(version=version, repo_id='latest', arch=arch)
+        # there should be a file called "repo.json" in the repository directory; we fetch the file and extract
+        # the real repository id from it. That way we don't have to rely on the ever-changing "latest" identifier
+        # that could cause trouble during testing.
+        response, _ = http_get(buildroot_repo_url + 'repo.json', as_json=True)
+        if response and response.get('id'):
+            buildroot_repo_url = BUILDROOT_REPO_URL_TEMPLATE.format(version=version, repo_id=response.get('id'), arch=arch)
+        result.append(buildroot_repo_url)
 
     return result
 
