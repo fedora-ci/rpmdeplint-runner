@@ -8,8 +8,8 @@ from rpmdeplint_runner.utils import http_get, run_command, fix_arches
 
 BUILDROOT_REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/repos/f{version}-build/{repo_id}/{arch}/'
 
-REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/compose/branched/latest-Fedora-{version}/compose/Everything/{arch}/os/'
-DEBUGINFO_REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/compose/branched/latest-Fedora-{version}/compose/Everything/{arch}/debug/tree/'
+REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/compose/{state}/latest-Fedora-{version}/compose/Everything/{arch}/os/'
+DEBUGINFO_REPO_URL_TEMPLATE = 'https://kojipkgs.fedoraproject.org/compose/{state}/latest-Fedora-{version}/compose/Everything/{arch}/debug/tree/'
 
 RAWHIDE_REPO_URL = 'https://kojipkgs.fedoraproject.org/compose/rawhide/latest-Fedora-Rawhide/compose/Everything/{arch}/os/'
 RAWHIDE_DEBUGINFO_REPO_URL = 'https://kojipkgs.fedoraproject.org/compose/rawhide/latest-Fedora-Rawhide/compose/Everything/{arch}/debug/tree/'
@@ -40,25 +40,35 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
     version = get_version(release_id)
     repo_url = RAWHIDE_REPO_URL.format(arch=arch)
     debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(version=version, arch=arch)
-    releases = get_releases_from_bodhi(state='pending')
+    releases = get_releases_from_bodhi()
 
     if not is_rawhide(version, releases):
-        repo_name = 'fedora-{version}-{arch}'
-        repo_url = REPO_URL_TEMPLATE.format(version=version, arch=arch)
-        debug_repo_name = 'fedora-debuginfo-{version}-{arch}'
-        debug_repo_url = DEBUGINFO_REPO_URL_TEMPLATE.format(version=version, arch=arch)
-        # there are 2 cases when the repo URL will not exist:
-        # the version is too old and the repo is simply
-        # no longer available, or it is too soon after
-        # branching and thus the repo is not available yet.
-        # so we fall back to rawhide repo in such situations
-        if not repo_exists(repo_url):
-            if is_pending(version, releases):
-                # it's too early after branching — let's use Rawhide repo instead
-                repo_url = RAWHIDE_REPO_URL.format(arch=arch)
-                debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(version=version, arch=arch)
-            else:
-                raise ValueError('Repo for release "{release_id}" doesn\'t exist'.format(release_id=release_id))
+        if is_current(version, releases):
+            state = version
+            repo_name = 'fedora-{version}-{arch}'.format(version=version, arch=arch)
+            repo_url = REPO_URL_TEMPLATE.format(state=state, version=version, arch=arch)
+            debug_repo_name = 'fedora-debuginfo-{version}-{arch}'.format(version=version, arch=arch)
+            debug_repo_url = DEBUGINFO_REPO_URL_TEMPLATE.format(state=state, version=version, arch=arch)
+        else:
+            state = 'branched'
+            repo_name = 'fedora-{version}-{arch}'.format(version=version, arch=arch)
+            repo_url = REPO_URL_TEMPLATE.format(state=state, version=version, arch=arch)
+            debug_repo_name = 'fedora-debuginfo-{version}-{arch}'.format(version=version, arch=arch)
+            debug_repo_url = DEBUGINFO_REPO_URL_TEMPLATE.format(state=state, version=version, arch=arch)
+
+            # we need to check that this pre-release repo already exists
+            if not repo_exists(repo_url):
+                # there are 2 cases when the repo URL will not exist:
+                # the version is too old and the repo is simply
+                # no longer available, or it is too soon after
+                # branching and thus the repo is not available yet.
+                # if this is tha latter, we simply fall back to rawhide repo.
+                if is_pending(version, releases):
+                    # it's too early after branching — let's use Rawhide repo instead
+                    repo_url = RAWHIDE_REPO_URL.format(arch=arch)
+                    debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(version=version, arch=arch)
+                else:
+                    raise ValueError('Repo for release "{release_id}" doesn\'t exist: {repo_url}'.format(release_id=release_id, repo_url=repo_url))
 
     result[repo_name] = repo_url
 
@@ -66,12 +76,13 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
         result[debug_repo_name] = debug_repo_url
 
     if not exclude_buildroot:
-        buildroot_repo_name = 'fedora-buildroot-{version}-{arch}'
+        buildroot_repo_name = 'fedora-buildroot-{version}-{arch}'.format(version=version, arch=arch)
         buildroot_repo_url = BUILDROOT_REPO_URL_TEMPLATE.format(version=version, repo_id='latest', arch=arch)
         # there should be a file called "repo.json" in the repository directory; we fetch the file and extract
         # the real repository id from it. That way we don't have to rely on the ever-changing "latest" identifier
         # that could cause trouble during testing.
-        response, _ = http_get(buildroot_repo_url + 'repo.json', as_json=True)
+        repo_json_url = buildroot_repo_url[:buildroot_repo_url.rfind('{arch}/'.format(arch=arch))] + 'repo.json'
+        response, _ = http_get(repo_json_url, as_json=True)
         if response and response.get('id'):
             buildroot_repo_url = BUILDROOT_REPO_URL_TEMPLATE.format(version=version, repo_id=response.get('id'), arch=arch)
         result[buildroot_repo_name] = buildroot_repo_url
@@ -96,10 +107,23 @@ def is_pending(version, releases):
 
     :param version: str, version
     :param releases: list, a list with information about fedora releases from Bodhi
-    :return: bool, True if given version is pending release, False otherwise
+    :return: bool, True if given version is a pending release, False otherwise
     """
     for release in releases:
         if release['version'] == version and release['id_prefix'] == 'FEDORA' and release['state'] == 'pending':
+            return True
+    return False
+
+
+def is_current(version, releases):
+    """Check if given version is "current" (released and supported) or not.
+
+    :param version: str, version
+    :param releases: list, a list with information about fedora releases from Bodhi
+    :return: bool, True if given version is a current release, False otherwise
+    """
+    for release in releases:
+        if release['version'] == version and release['id_prefix'] == 'FEDORA' and release['state'] == 'current':
             return True
     return False
 
@@ -140,11 +164,46 @@ def get_releases_from_bodhi(state=None):
     :param state: str, return only releases in this state, example: "pending"
     :return: list, a list of dictionaries describing releases in Bodhi
     """
-    bodhi_url = BODHI_RELEASES_URL
-    if state:
-        bodhi_url += '?state={state}'.format(state=state)
-    releases, _ = http_get(bodhi_url, as_json=True)
-    return releases.get('releases', [])
+
+    def _get_bodhi_url(page=None, state=None):
+        """Construct Bodhi URL.
+
+        :param state: str, state, e.g.: 'pending', or 'current'
+        :param page: int, page number
+        :return: str, Bodhi URL
+        """
+        bodhi_url = BODHI_RELEASES_URL
+        query_string = ''
+
+        if state:
+            if not query_string:
+                query_string += '?'
+            else:
+                query_string += '&'
+            query_string += 'state={state}'.format(state=state)
+
+        if page and page > 1:
+            if not query_string:
+                query_string += '?'
+            else:
+                query_string += '&'
+            query_string += 'page={page}'.format(page=page)
+        return bodhi_url + query_string
+
+    response_json, _ = http_get(_get_bodhi_url(state=state), as_json=True)
+
+    releases = response_json.get('releases', [])
+
+    # handle pagination
+    pages_total = int(response_json.get('pages', '1'))
+    pages_done = 1
+
+    while pages_done < pages_total:
+        response_json, _ = http_get(_get_bodhi_url(page=pages_done+1, state=state), as_json=True)
+        pages_done += 1
+        releases.extend(response_json.get('releases', []))
+
+    return releases
 
 
 def get_cache_dir(work_dir):
