@@ -2,7 +2,7 @@
 
 @Library('github.com/msrb/jenkins-pipeline-library@prototype') _
 
-def imageName = 'quay.io/msrb/rpmdeplint'
+def imageName = 'quay.io/fedoraci/rpmdeplint'
 def imageTag
 
 def commitId
