@@ -29,6 +29,12 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
     :param exclude_debuginfo: bool, exclude debuginfo repos or not
     :return: list, a list of repo URLs
     """
+
+    if arch == 'armv7hl':
+        # from some unknown reason, Koji uses "armv7hl" identifier, but composes use "armhfp"...
+        # TODO: find out why
+        arch = 'armhfp'
+
     version = get_version(release_id)
     repo_url = RAWHIDE_REPO_URL.format(arch=arch)
     debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(version=version, arch=arch)
