@@ -5,6 +5,7 @@ import sys
 import requests
 import logging
 
+from rpmdeplint_runner.outcome import TmtExitCodes, RpmdeplintCodes
 from rpmdeplint_runner.utils import run_rpmdeplint
 from rpmdeplint_runner.utils.fedora import download_rpms, get_repo_urls, get_cached_rpms
 
@@ -93,11 +94,12 @@ def run_test(work_dir, test_name, release_id, os, task_ids=None, arch=None):
     rpms_list = get_cached_rpms(work_dir, [arch], task_ids)
     _, return_code = run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir)
     # fail if rpmdeplint failed
-    sys.exit(return_code)
+    TmtExitCodes.from_rpmdeplint(RpmdeplintCodes.from_rc(return_code))
+    sys.exit(TmtExitCodes.from_rpmdeplint(RpmDeplintCodes.from_rc(return_code)).value)
 
 
 def run(args):
-    """Run, Forest, run!"""
+    """Run, Rpmdeplint, run!"""
     if args.command == 'prepare':
         prepare(args.work_dir, args.task_id, args.arch)
     elif args.command == 'run-test':
