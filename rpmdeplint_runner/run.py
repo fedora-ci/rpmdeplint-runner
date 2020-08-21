@@ -95,7 +95,7 @@ def run_test(work_dir, test_name, release_id, os, task_ids=None, arch=None):
     _, return_code = run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir)
     # fail if rpmdeplint failed
     TmtExitCodes.from_rpmdeplint(RpmdeplintCodes.from_rc(return_code))
-    sys.exit(TmtExitCodes.from_rpmdeplint(RpmDeplintCodes.from_rc(return_code)).value)
+    sys.exit(TmtExitCodes.from_rpmdeplint(RpmdeplintCodes.from_rc(return_code)).value)
 
 
 def run(args):
