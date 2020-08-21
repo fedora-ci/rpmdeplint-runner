@@ -7,7 +7,7 @@ import logging
 
 from rpmdeplint_runner.outcome import TmtExitCodes, RpmdeplintCodes
 from rpmdeplint_runner.utils import run_rpmdeplint
-from rpmdeplint_runner.utils.fedora import download_rpms, get_repo_urls, get_cached_rpms
+from rpmdeplint_runner.utils.fedora import download_rpms, get_repo_urls, get_cached_rpms, is_prepared
 
 
 logger = logging.getLogger(__name__)
@@ -92,9 +92,28 @@ def run_test(work_dir, test_name, release_id, os, task_ids=None, arch=None):
     """
     repo_urls = get_repo_urls(release_id, arch)
     rpms_list = get_cached_rpms(work_dir, [arch], task_ids)
+
+    if not is_prepared(work_dir, task_ids, [arch]):
+        # TODO: stderr
+        print(
+            'Error: unable to run the "{test_name}({arch})" test as RPMs for the task id {task_id} were not downloaded.'.format(
+                test_name=test_name, task_id=str(task_ids), arch=arch
+            )
+        )
+        sys.exit(TmtExitCodes.ERROR.value)
+
+    if not rpms_list:
+        # skip the test if there are no RPMs for given arch
+        # TODO: stderr
+        print(
+            'Skipping "{test_name}({arch})" test for the task id {task_id} as there are no RPMs for that architecture...'.format(
+                test_name=test_name, task_id=str(task_ids), arch=arch
+            )
+        )
+        sys.exit(TmtExitCodes.SKIPPED.value)
+
     _, return_code = run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir)
     # fail if rpmdeplint failed
-    TmtExitCodes.from_rpmdeplint(RpmdeplintCodes.from_rc(return_code))
     sys.exit(TmtExitCodes.from_rpmdeplint(RpmdeplintCodes.from_rc(return_code)).value)
 
 

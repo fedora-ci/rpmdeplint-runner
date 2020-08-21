@@ -204,6 +204,11 @@ def get_releases_from_bodhi(state=None):
     return releases
 
 
+def get_status_file_path(work_dir, task_id, arch):
+    arch_dir = get_cache_dir(work_dir) / pathlib.Path(str(task_id)) / pathlib.Path(arch)
+    return arch_dir / pathlib.Path('status')
+
+
 def get_cache_dir(work_dir):
     """Get directory where downloaded packages are cached.
 
@@ -274,7 +279,39 @@ def download_rpms(task_id, work_dir, arches, skip_if_exists=True):
             '--task-id', str(task_id)
         ]
         run_command(cmd, cwd=arch_dir)
+
+        # It is possible that there are no RPMs for the (task id, arch) pair, and that is fine.
+        # In any case, we capture the fact that the download step succeed in the "status" file.
+        # This way we will be able to verify before running tests that we actually have
+        # all RPMs downloaded in the cache. If they don't exist, we skip the test.
+        status_file_path = get_status_file_path(work_dir, task_id, arch)
+        with open(status_file_path, 'w') as f:
+            f.write('done')
+
         rpms = get_cached_rpms(work_dir, arches=[arch], task_ids=[task_id])
         all_rpms.extend(rpms)
 
     return all_rpms
+
+
+def is_prepared(work_dir, task_ids, arches):
+    """Check if the environment is prepared for testing.
+
+    Right now we only check that all RPMs
+    that we want to test are downloaded and cached locally.
+    """
+    fix_arches(arches)
+
+    for task_id in task_ids:
+        for arch in arches:
+            status_file_path = get_status_file_path(work_dir, task_id, arch)
+
+            if not status_file_path.exists():
+                return False
+
+            with open(status_file_path) as f:
+                # there should be "done" on the first line in the file
+                if f.readlines()[0].strip() != 'done':
+                    return False
+
+        return True
