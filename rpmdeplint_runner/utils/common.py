@@ -11,8 +11,6 @@ from xml.dom import minidom
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from rpmdeplint_runner.outcome import Outcome
-
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +72,6 @@ def run_command(
         raise subprocess.CalledProcessError(return_code, cmd, stderr)
 
     return stdout, stderr, return_code
-
-
-def rc2outcome(return_code):
-    return Outcome.PASS if return_code else Outcome.FAIL
 
 
 def fix_arches(arches):
