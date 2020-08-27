@@ -1,6 +1,6 @@
 #!groovy
 
-@Library('github.com/msrb/jenkins-pipeline-library@prototype') _
+@Library('github.com/fedora-ci/jenkins-pipeline-library@prototype') _
 
 def imageName = 'quay.io/fedoraci/rpmdeplint'
 def imageTag
