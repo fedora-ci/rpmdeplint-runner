@@ -90,7 +90,7 @@ def run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir):
     # pathlib.Path -> str
     rpms_list = [str(x) for x in rpms_list]
 
-    cmd = ['rpmdeplint', test_name, '--arch', arch]
+    cmd = ['rpmdeplint', '--quiet', test_name, '--arch', arch]
     cmd.extend(repo_params)
     cmd.extend(rpms_list)
 
