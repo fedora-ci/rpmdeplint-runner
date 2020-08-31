@@ -95,7 +95,7 @@ def run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir):
     # FIXME: this should be configurable from the outside (from fmf file(?)), and not hardcoded here
     if test_name == 'check-conflicts':
         # See: bugzilla.redhat.com/show_bug.chi?id=1862350
-        cmd.extend(['--skip-filename', '/usr/lib/.build-id.*'])
+        cmd.extend(['--skip-filename', '/usr/lib/.build-id.*', '--skip-filename', '/usr/lib/debug/.build-id.*'])
     cmd.extend(repo_params)
     cmd.extend(rpms_list)
 
