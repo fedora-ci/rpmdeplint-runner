@@ -2,7 +2,7 @@ FROM registry.fedoraproject.org/fedora:33
 LABEL maintainer "Fedora-CI"
 LABEL description="rpmdeplint for fedora-ci"
 
-ENV RPMDEPLINT_VERSION=4989ca8
+ENV RPMDEPLINT_VERSION=e3549fd
 ENV RPMDEPLINT_DIR=/rpmdeplint_runner/
 ENV RPMDEPLINT_RUNNER_DIR=/rpmdeplint_runner/
 ENV RPMDEPLINT_WORKDIR=/workdir/
@@ -25,9 +25,7 @@ RUN dnf -y install \
 
 WORKDIR ${RPMDEPLINT_DIR}
 
-# don't wait for official releases — install specific rpmdeplint version from git
-# TODO: switch back to upstream once following commit is merged:
-# https://pagure.io/fork/msrb/rpmdeplint/c/4989ca81ea0ff24bf9c68f91f23ba12316dec5b1?branch=skip-filename
+# https://pagure.io/fork/msrb/rpmdeplint/tree/rpmdeplint-1.4-fedora-ci
 RUN git clone https://pagure.io/forks/msrb/rpmdeplint.git && cd rpmdeplint/ &&\
     git reset --hard ${RPMDEPLINT_VERSION} &&\
     pip install .
