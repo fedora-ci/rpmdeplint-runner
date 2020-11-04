@@ -2,7 +2,7 @@ FROM registry.fedoraproject.org/fedora:33
 LABEL maintainer "Fedora-CI"
 LABEL description="rpmdeplint for fedora-ci"
 
-ENV RPMDEPLINT_VERSION=e3549fd
+ENV RPMDEPLINT_VERSION=5cc62b3
 ENV RPMDEPLINT_DIR=/rpmdeplint_runner/
 ENV RPMDEPLINT_RUNNER_DIR=/rpmdeplint_runner/
 ENV RPMDEPLINT_WORKDIR=/workdir/

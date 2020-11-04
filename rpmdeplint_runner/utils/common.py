@@ -82,7 +82,25 @@ def fix_arches(arches):
     return arches
 
 
+def configure_logging_for_test(test_name, arch):
+    """Redirrect everything rpmdeplint has to say to a file.
+
+    Only log messages though, not stdout/stderr.
+    """
+    logger = logging.getLogger('rpmdeplint')
+    logger.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    log_filename = '{testname}-{arch}.log'.format(testname=test_name, arch=arch)
+    handler = logging.FileHandler(log_filename)
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+
+
 def run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir):
+    """Run rpmdeplint."""
     repo_params = []
     for name, url in repo_urls.items():
         repo_params.extend(['--repo', '{name},{url}'.format(name=name, url=url)])
@@ -90,15 +108,17 @@ def run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir):
     # pathlib.Path -> str
     rpms_list = [str(x) for x in rpms_list]
 
-    cmd = ['rpmdeplint', '--quiet', test_name, '--arch', arch]
+    args = ['--quiet', test_name, '--arch', arch]
 
     # FIXME: this should be configurable from the outside (from fmf file(?)), and not hardcoded here
     if test_name == 'check-conflicts':
         # See: bugzilla.redhat.com/show_bug.chi?id=1862350
-        cmd.extend(['--skip-filename', '/usr/lib/.build-id.*', '--skip-filename', '/usr/lib/debug/.build-id.*'])
-    cmd.extend(repo_params)
-    cmd.extend(rpms_list)
+        args.extend(['--skip-filename', '/usr/lib/.build-id.*', '--skip-filename', '/usr/lib/debug/.build-id.*'])
 
-    stdout, stderr, return_code = run_command(cmd, cwd=work_dir)
+    args.extend(repo_params)
+    args.extend(rpms_list)
 
-    return stdout, return_code
+    configure_logging_for_test(test_name, arch)
+    from rpmdeplint import cli as rpmdeplint_cli
+
+    return rpmdeplint_cli.main(args)
