@@ -75,8 +75,6 @@ def run_command(
 
 
 def fix_arches(arches):
-    if 'x86_64' in arches and 'i686' not in arches:
-        arches.append('i686')
     if 'noarch' not in arches:
         arches.append('noarch')
     return arches
