@@ -32,11 +32,6 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
 
     result = {}
 
-    if arch == 'armv7hl':
-        # from some unknown reason, Koji uses "armv7hl" identifier, but composes use "armhfp"...
-        # TODO: find out why
-        arch = 'armhfp'
-
     version = get_version(release_id)
     repo_name = 'fedora-{version}-{arch}'.format(version=version, arch=arch)
     debug_repo_name = 'fedora-debuginfo-{version}-{arch}'.format(version=version, arch=arch)
