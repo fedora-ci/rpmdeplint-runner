@@ -1,6 +1,7 @@
 # rpmdeplint container image
 
-This repository contains bits needed to build a container image for [rpmdeplint](https://pagure.io/rpmdeplint). This image can be later used by Fedora CI.
+This repository contains bits needed to build a container image for [rpmdeplint](https://github.com/fedora-ci/rpmdeplint).
+This image can be later used by Fedora CI.
 
 ## Development
 
