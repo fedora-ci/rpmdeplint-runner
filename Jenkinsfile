@@ -54,7 +54,7 @@ pipeline {
         }
     }
 
-    post { 
+    post {
         success {
             script {
                 if (isPullRequest()) {
