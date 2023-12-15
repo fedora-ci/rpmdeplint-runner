@@ -53,7 +53,7 @@ def parse_args():
         help="a comma-separated list of repository architectures",
     )
     prepare_parser.add_argument(
-        "--workdir", dest="work_dir", required=True, help="workdir where to store files"
+        "--workdir", dest="work_dir", help="workdir where to store files"
     )
 
     test_parser = subparsers.add_parser(
@@ -97,7 +97,7 @@ def parse_args():
         arches.extend(list(arch_str.strip().split(",")))
     args.arch = arches
 
-    args.work_dir = Path(args.work_dir)
+    args.work_dir = Path(args.work_dir) if args.work_dir else Path.cwd()
 
     return args
 
