@@ -36,4 +36,4 @@ commands:
 
 ### Note about promoting to production
 
-Merging pull requests to the master branch also triggers a build in CI. However, such images are **not*** automatically promoted and used by the CI pipelines. In order to promote a new image to production, you need to explicitly say so in the [rpmdeplint-pipeline](https://github.com/fedora-ci/rpmdeplint-pipeline/README.md#promoting-new-rpmdeplint-image-to-production) repository.
+Merging pull requests to the master branch also triggers a build in CI. However, such images are **not\*** automatically promoted and used by the CI pipelines. In order to promote a new image to production, you need to explicitly say so in the [rpmdeplint-pipeline](https://github.com/fedora-ci/rpmdeplint-pipeline/README.md#promoting-new-rpmdeplint-image-to-production) repository.
