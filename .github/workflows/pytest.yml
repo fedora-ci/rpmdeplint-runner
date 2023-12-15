@@ -1,0 +1,19 @@
+name: Pytest
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Install
+        run: |
+          pip3 install -r requirements.txt
+          pip3 install .
+      - name: Test with pytest
+        run: |
+          pip3 install pytest
+          pytest --verbose --showlocals tests/
