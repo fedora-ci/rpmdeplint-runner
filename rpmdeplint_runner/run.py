@@ -158,9 +158,7 @@ def run(args):
         prepare(args.work_dir, args.task_id, args.arch)
     elif args.command == "run-test":
         arch = args.arch[0]
-        run_test(
-            args.work_dir, args.test_name, args.release_id, args.os, args.task_id, arch
-        )
+        run_test(args.work_dir, args.test_name, args.release_id, args.task_id, arch)
 
 
 if __name__ == "__main__":
