@@ -3,9 +3,12 @@
 import argparse
 import logging
 import sys
+import yaml
+from os import getenv
 from pathlib import Path
+from typing import Optional
 
-from rpmdeplint_runner.outcome import TmtExitCodes, RpmdeplintCodes
+from rpmdeplint_runner.outcome import RpmdeplintCodes, TmtExitCodes, TmtResult
 from rpmdeplint_runner.utils import run_rpmdeplint
 from rpmdeplint_runner.utils.fedora import (
     download_rpms,
@@ -136,7 +139,7 @@ def run_test(
             f'Error: unable to run the "{test_name}({arch})" test '
             f"as RPMs for the task id {task_ids} were not downloaded."
         )
-        sys.exit(TmtExitCodes.ERROR.value)
+        save_results_and_exit(TmtExitCodes.ERROR)
 
     if not rpms_list:
         # skip the test if there are no RPMs for given arch
@@ -145,11 +148,30 @@ def run_test(
             f'Skipping "{test_name}({arch})" test for the task id {task_ids} '
             f"as there are no RPMs for that architecture..."
         )
-        sys.exit(TmtExitCodes.SKIPPED.value)
+        save_results_and_exit(TmtExitCodes.SKIPPED)
 
     return_code = run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir)
-    # fail if rpmdeplint failed
-    sys.exit(TmtExitCodes.from_rpmdeplint(RpmdeplintCodes.from_rc(return_code)).value)
+    tmt_exit_code = TmtExitCodes.from_rpmdeplint(RpmdeplintCodes.from_rc(return_code))
+    save_results_and_exit(
+        tmt_exit_code,
+        f"{test_name}-{arch}.log",
+    )
+
+
+def save_results_and_exit(
+    tmt_exit_code: TmtExitCodes, log_name: Optional[str] = None
+) -> None:
+    if getenv("TMT_TEST_DATA"):
+        results = {
+            "name": "/rpmdeplint",
+            "result": TmtResult.from_exit_code(tmt_exit_code).value,
+            "log": ["../output.txt", log_name] if log_name else ["../output.txt"],
+        }
+        with open(f"{getenv('TMT_TEST_DATA')}/results.yaml", "w") as file:
+            yaml.dump(results, file)
+        sys.exit(0)
+
+    sys.exit(tmt_exit_code.value)
 
 
 def run(args):
