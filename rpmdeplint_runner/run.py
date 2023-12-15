@@ -1,8 +1,9 @@
-#!/bin/python3
+#!/usr/bin/python3
 
 import argparse
-import sys
 import logging
+import sys
+from pathlib import Path
 
 from rpmdeplint_runner.outcome import TmtExitCodes, RpmdeplintCodes
 from rpmdeplint_runner.utils import run_rpmdeplint
@@ -12,7 +13,6 @@ from rpmdeplint_runner.utils.fedora import (
     get_cached_rpms,
     is_prepared,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +89,10 @@ def parse_args():
         sys.exit(1)
 
     # turn string (a comma-separated list of task ids) into a Python list
-    # "428432,4535432" -> ["428432", "4535432"]
+    # ["428432,4535432", "123456"] -> ["428432", "4535432", "123456"]
     task_ids = []
     for task_id_str in args.task_id:
-        task_ids.extend([int(x) for x in task_id_str.strip().split(",")])
+        task_ids.extend(list(task_id_str.strip().split(",")))
     args.task_id = task_ids
 
     # turn string (a comma-separated list of arches) into a Python list
@@ -102,29 +102,38 @@ def parse_args():
         arches.extend(list(arch_str.strip().split(",")))
     args.arch = arches
 
+    args.work_dir = Path(args.work_dir)
+
     return args
 
 
-def prepare(work_dir, task_ids, arches):
+def prepare(work_dir: Path, task_ids: list[str], arches: list[str]) -> None:
     """Run prepare command.
 
-    :param work_dir: str, workdir
-    :param task_ids: list, task ids
-    :param arches: list, architectures
+    :param work_dir: workdir
+    :param task_ids: task ids
+    :param arches: list of architectures
     :return: None
     """
     for task_id in task_ids:
         download_rpms(task_id, work_dir, arches)
 
 
-def run_test(work_dir, test_name, release_id, os, task_ids=None, arch=None):
+def run_test(
+    work_dir: Path,
+    test_name: str,
+    release_id: str,
+    os: str,  # TODO: unused
+    task_ids: list[str],
+    arch: str,
+) -> None:
     """Run rpmdeplint test.
 
-    :param work_dir: str, workdir
-    :param test_name: str, name of the rpmdeplint test to run
-    :param release_id: str, release id, example: f33
-    :param task_ids: list, task ids
-    :param arch: str, architecture
+    :param work_dir: workdir
+    :param test_name: name of the rpmdeplint test to run
+    :param release_id: release id, example: f33
+    :param task_ids: task ids
+    :param arch: architecture
     :return: None
     """
     repo_urls = get_repo_urls(release_id, arch)

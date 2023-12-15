@@ -1,5 +1,6 @@
-import pathlib
 import re
+from pathlib import Path
+from typing import Optional
 
 from rpmdeplint_runner.utils import http_get, run_command, fix_arches
 
@@ -19,11 +20,13 @@ KOJI_HUB_URL = "https://koji.fedoraproject.org/kojihub"
 KOJI_TOP_URL = "https://kojipkgs.fedoraproject.org"
 
 
-def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=False):
+def get_repo_urls(
+    release_id: str, arch: str, exclude_buildroot=False, exclude_debuginfo=False
+) -> dict[str, str]:
     """Get repo URLs for given release id.
 
-    :param release_id: str, release id, example: f33
-    :param arch: str, architecture
+    :param release_id: release id, example: f40
+    :param arch: architecture
     :param exclude_buildroot: bool, exclude buildroot repos or not
     :param exclude_debuginfo: bool, exclude debuginfo repos or not
     :return: dict, a dict where keys are repo names and values are repo URLs
@@ -92,22 +95,22 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
     return result
 
 
-def repo_exists(repo_url):
+def repo_exists(repo_url: str) -> bool:
     """Check if given repository exists.
 
-    :param repo_url: str, repository URL
-    :return: bool, True if the repo exists, False otherwise
+    :param repo_url: repository URL
+    :return: True if the repo exists, False otherwise
     """
     _, status = http_get(repo_url)
     return status != 404
 
 
-def is_pending(version, releases):
+def is_pending(version: str, releases: list[dict]) -> bool:
     """Check if given version is pending (is not released yet) or not.
 
-    :param version: str, version
-    :param releases: list, a list with information about fedora releases from Bodhi
-    :return: bool, True if given version is a pending release, False otherwise
+    :param version: version
+    :param releases: a list with information about fedora releases from Bodhi
+    :return: True if given version is a pending release, False otherwise
     """
     return any(
         (
@@ -119,12 +122,12 @@ def is_pending(version, releases):
     )
 
 
-def is_current(version, releases):
+def is_current(version: str, releases: list[dict]) -> bool:
     """Check if given version is "current" (released and supported) or not.
 
-    :param version: str, version
-    :param releases: list, a list with information about fedora releases from Bodhi
-    :return: bool, True if given version is a current release, False otherwise
+    :param version: version
+    :param releases: a list with information about fedora releases from Bodhi
+    :return: True if given version is a current release, False otherwise
     """
     return any(
         (
@@ -136,11 +139,11 @@ def is_current(version, releases):
     )
 
 
-def get_version(release_id):
+def get_version(release_id: str) -> str:
     """Get version from release id.
 
-    :param release_id: str, release id, example: f33
-    :return: str, version ("f33" -> "33")
+    :param release_id: release id, example: f40
+    :return: version ("f40" -> "40")
     """
     if m := re.match(r"^f(\d+)$", release_id):
         return m[1]
@@ -148,12 +151,12 @@ def get_version(release_id):
         raise ValueError("Invalid release id: %s", release_id)
 
 
-def is_rawhide(version, releases):
+def is_rawhide(version: str, releases: list[dict]) -> bool:
     """Checks if given version is Rawhide or not.
 
-    :param version: str, fedora version, e.g. "33"
-    :param releases: list, a list with information about fedora releases from Bodhi
-    :return: bool, True if given version is Rawhide, False otherwise
+    :param version: fedora version, e.g. "40"
+    :param releases: a list with information about fedora releases from Bodhi
+    :return: True if given version is Rawhide, False otherwise
     """
     # build a list of sorted pending versions; the last item in the list is Rawhide
     if pending_versions := sorted(
@@ -170,21 +173,20 @@ def is_rawhide(version, releases):
         raise ValueError("Unable to obtain a list of pending Fedora versions")
 
 
-def get_releases_from_bodhi(state=None):
+def get_releases_from_bodhi(state: Optional[str] = None) -> list[dict]:
     """Query Bodhi for a list of stable and pending releases.
 
-    :param state: str, return only releases in this state, example: "pending"
-    :return: list, a list of dictionaries describing releases in Bodhi
+    :param state: return only releases in this state, example: "pending"
+    :return: a list of dictionaries describing releases in Bodhi
     """
 
-    def _get_bodhi_url(page=None, state=None):
+    def _get_bodhi_url(page: Optional[int] = None, state: Optional[str] = None) -> str:
         """Construct Bodhi URL.
 
-        :param state: str, state, e.g.: 'pending', or 'current'
-        :param page: int, page number
-        :return: str, Bodhi URL
+        :param state: state, e.g.: 'pending', or 'current'
+        :param page: page number
+        :return: Bodhi URL
         """
-        bodhi_url = BODHI_RELEASES_URL
         query_string = ""
 
         if state:
@@ -194,7 +196,7 @@ def get_releases_from_bodhi(state=None):
         if page and page > 1:
             query_string += "&" if query_string else "?"
             query_string += f"page={page}"
-        return bodhi_url + query_string
+        return BODHI_RELEASES_URL + query_string
 
     response_json, _ = http_get(_get_bodhi_url(state=state), as_json=True)
 
@@ -214,27 +216,30 @@ def get_releases_from_bodhi(state=None):
     return releases
 
 
-def get_status_file_path(work_dir, task_id, arch):
-    arch_dir = get_cache_dir(work_dir) / pathlib.Path(str(task_id)) / pathlib.Path(arch)
-    return arch_dir / pathlib.Path("status")
+def get_status_file_path(work_dir: Path, task_id: str, arch: str) -> Path:
+    return get_cache_dir(work_dir) / task_id / arch / "status"
 
 
-def get_cache_dir(work_dir):
+def get_cache_dir(work_dir: Path) -> Path:
     """Get directory where downloaded packages are cached.
 
-    :param work_dir: str, workdir
-    :return: pathlib.Path, cache directory
+    :param work_dir: workdir
+    :return: cache directory
     """
-    return pathlib.Path(work_dir) / pathlib.Path("packages")
+    return work_dir / "packages"
 
 
-def get_cached_rpms(work_dir, arches=None, task_ids=None):
+def get_cached_rpms(
+    work_dir: Path,
+    arches: list[str],
+    task_ids: list[str],
+) -> list[Path]:
     """Find workdir-cached RPM packages that match given criteria.
 
-    :param work_dir: str, workdir
-    :param arches: list, a list of arches
-    :param task_ids: list, a list of task ids
-    :return: pathlib.Path, a list of cached packages
+    :param work_dir: workdir
+    :param arches: a list of arches
+    :param task_ids: a list of task ids
+    :return: a list of cached packages
     """
     cache_dir = get_cache_dir(work_dir)
     rpms = []
@@ -244,35 +249,35 @@ def get_cached_rpms(work_dir, arches=None, task_ids=None):
     if not task_ids:
         task_dirs = list(cache_dir.glob("**/*.rpm"))
     else:
-        task_dirs = [cache_dir / pathlib.Path(str(x)) for x in task_ids]
+        task_dirs = [cache_dir / x for x in task_ids]
 
     for task_dir in task_dirs:
         if not arches:
             rpms = list(task_dir.glob("**/*.rpm"))
         else:
             for arch in arches:
-                arch_dir = task_dir / pathlib.Path(arch)
+                arch_dir = task_dir / arch
                 rpms.extend(list(arch_dir.glob("*.rpm")))
     return rpms
 
 
-def download_rpms(task_id, work_dir, arches, skip_if_exists=True):
+def download_rpms(
+    task_id: str, work_dir: Path, arches: list[str], skip_if_exists=True
+) -> list[Path]:
     """Cache RPM packages.
 
-    :param task_id: str, task id
-    :param work_dir: str, workdir
-    :param arches: list, a list of arches
+    :param task_id: task id
+    :param work_dir: workdir
+    :param arches: a list of arches
     :param skip_if_exists: bool, skip downloading if there are already cached RPMs for given (task id, arch)
-    :return: pathlib.Path, a list of cached packages
+    :return: Path, a list of cached packages
     """
-    all_rpms = []
+    all_rpms: list[Path] = []
 
     fix_arches(arches)
 
     for arch in arches:
-        arch_dir = (
-            get_cache_dir(work_dir) / pathlib.Path(str(task_id)) / pathlib.Path(arch)
-        )
+        arch_dir = get_cache_dir(work_dir) / task_id / arch
         if not arch_dir.exists():
             arch_dir.mkdir(parents=True, exist_ok=True)
 
@@ -290,7 +295,7 @@ def download_rpms(task_id, work_dir, arches, skip_if_exists=True):
             "--noprogress",
             "--debuginfo",
             "--task-id",
-            str(task_id),
+            task_id,
         ]
         run_command(cmd, cwd=arch_dir)
 
@@ -299,8 +304,7 @@ def download_rpms(task_id, work_dir, arches, skip_if_exists=True):
         # This way we will be able to verify before running tests that we actually have
         # all RPMs downloaded in the cache. If they don't exist, we skip the test.
         status_file_path = get_status_file_path(work_dir, task_id, arch)
-        with open(status_file_path, "w") as f:
-            f.write("done")
+        status_file_path.write_text("done")
 
         rpms = get_cached_rpms(work_dir, arches=[arch], task_ids=[task_id])
         all_rpms.extend(rpms)
@@ -308,7 +312,7 @@ def download_rpms(task_id, work_dir, arches, skip_if_exists=True):
     return all_rpms
 
 
-def is_prepared(work_dir, task_ids, arches):
+def is_prepared(work_dir: Path, task_ids: list[str], arches: list[str]) -> bool:
     """Check if the environment is prepared for testing.
 
     Right now we only check that all RPMs
@@ -329,3 +333,5 @@ def is_prepared(work_dir, task_ids, arches):
                     return False
 
         return True
+
+    return True
