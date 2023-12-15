@@ -99,7 +99,7 @@ def parse_args():
     # "x86_64,i686" -> ["x86_64", "i686"]
     arches = []
     for arch_str in args.arch:
-        arches.extend([x for x in arch_str.strip().split(",")])
+        arches.extend(list(arch_str.strip().split(",")))
     args.arch = arches
 
     return args
@@ -133,9 +133,8 @@ def run_test(work_dir, test_name, release_id, os, task_ids=None, arch=None):
     if not is_prepared(work_dir, task_ids, [arch]):
         # TODO: stderr
         print(
-            'Error: unable to run the "{test_name}({arch})" test as RPMs for the task id {task_id} were not downloaded.'.format(
-                test_name=test_name, task_id=str(task_ids), arch=arch
-            )
+            f'Error: unable to run the "{test_name}({arch})" test '
+            f"as RPMs for the task id {task_ids} were not downloaded."
         )
         sys.exit(TmtExitCodes.ERROR.value)
 
@@ -143,9 +142,8 @@ def run_test(work_dir, test_name, release_id, os, task_ids=None, arch=None):
         # skip the test if there are no RPMs for given arch
         # TODO: stderr
         print(
-            'Skipping "{test_name}({arch})" test for the task id {task_id} as there are no RPMs for that architecture...'.format(
-                test_name=test_name, task_id=str(task_ids), arch=arch
-            )
+            f'Skipping "{test_name}({arch})" test for the task id {task_ids} '
+            f"as there are no RPMs for that architecture..."
         )
         sys.exit(TmtExitCodes.SKIPPED.value)
 

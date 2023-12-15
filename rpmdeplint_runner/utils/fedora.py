@@ -29,13 +29,9 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
     :return: dict, a dict where keys are repo names and values are repo URLs
     """
 
-    result = {}
-
     version = get_version(release_id)
-    repo_name = "fedora-{version}-{arch}".format(version=version, arch=arch)
-    debug_repo_name = "fedora-debuginfo-{version}-{arch}".format(
-        version=version, arch=arch
-    )
+    repo_name = f"fedora-{version}-{arch}"
+    debug_repo_name = f"fedora-debuginfo-{version}-{arch}"
     repo_url = RAWHIDE_REPO_URL.format(arch=arch)
     debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(version=version, arch=arch)
     releases = get_releases_from_bodhi()
@@ -61,28 +57,22 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
                 # no longer available, or it is too soon after
                 # branching and thus the repo is not available yet.
                 # if this is tha latter, we simply fall back to rawhide repo.
-                if is_pending(version, releases):
-                    # it's too early after branching — let's use Rawhide repo instead
-                    repo_url = RAWHIDE_REPO_URL.format(arch=arch)
-                    debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(
-                        version=version, arch=arch
-                    )
-                else:
+                if not is_pending(version, releases):
                     raise ValueError(
-                        'Repo for release "{release_id}" doesn\'t exist: {repo_url}'.format(
-                            release_id=release_id, repo_url=repo_url
-                        )
+                        f'Repo for release "{release_id}" doesn\'t exist: {repo_url}'
                     )
+                # it's too early after branching — let's use Rawhide repo instead
+                repo_url = RAWHIDE_REPO_URL.format(arch=arch)
+                debug_repo_url = RAWHIDE_DEBUGINFO_REPO_URL.format(
+                    version=version, arch=arch
+                )
 
-    result[repo_name] = repo_url
-
+    result = {repo_name: repo_url}
     if not exclude_debuginfo:
         result[debug_repo_name] = debug_repo_url
 
     if not exclude_buildroot:
-        buildroot_repo_name = "fedora-buildroot-{version}-{arch}".format(
-            version=version, arch=arch
-        )
+        buildroot_repo_name = f"fedora-buildroot-{version}-{arch}"
         buildroot_repo_url = BUILDROOT_REPO_URL_TEMPLATE.format(
             version=version, repo_id="latest", arch=arch
         )
@@ -90,8 +80,7 @@ def get_repo_urls(release_id, arch, exclude_buildroot=False, exclude_debuginfo=F
         # the real repository id from it. That way we don't have to rely on the ever-changing "latest" identifier
         # that could cause trouble during testing.
         repo_json_url = (
-            buildroot_repo_url[: buildroot_repo_url.rfind("{arch}/".format(arch=arch))]
-            + "repo.json"
+            buildroot_repo_url[: buildroot_repo_url.rfind(f"{arch}/")] + "repo.json"
         )
         response, _ = http_get(repo_json_url, as_json=True)
         if response and response.get("id"):
@@ -110,9 +99,7 @@ def repo_exists(repo_url):
     :return: bool, True if the repo exists, False otherwise
     """
     _, status = http_get(repo_url)
-    if status == 404:
-        return False
-    return True
+    return status != 404
 
 
 def is_pending(version, releases):
@@ -122,14 +109,14 @@ def is_pending(version, releases):
     :param releases: list, a list with information about fedora releases from Bodhi
     :return: bool, True if given version is a pending release, False otherwise
     """
-    for release in releases:
-        if (
+    return any(
+        (
             release["version"] == version
             and release["id_prefix"] == "FEDORA"
             and release["state"] == "pending"
-        ):
-            return True
-    return False
+        )
+        for release in releases
+    )
 
 
 def is_current(version, releases):
@@ -139,14 +126,14 @@ def is_current(version, releases):
     :param releases: list, a list with information about fedora releases from Bodhi
     :return: bool, True if given version is a current release, False otherwise
     """
-    for release in releases:
-        if (
+    return any(
+        (
             release["version"] == version
             and release["id_prefix"] == "FEDORA"
             and release["state"] == "current"
-        ):
-            return True
-    return False
+        )
+        for release in releases
+    )
 
 
 def get_version(release_id):
@@ -155,10 +142,10 @@ def get_version(release_id):
     :param release_id: str, release id, example: f33
     :return: str, version ("f33" -> "33")
     """
-    m = re.match(r"^f(\d+)$", release_id)
-    if not m:
+    if m := re.match(r"^f(\d+)$", release_id):
+        return m[1]
+    else:
         raise ValueError("Invalid release id: %s", release_id)
-    return m.group(1)
 
 
 def is_rawhide(version, releases):
@@ -169,7 +156,7 @@ def is_rawhide(version, releases):
     :return: bool, True if given version is Rawhide, False otherwise
     """
     # build a list of sorted pending versions; the last item in the list is Rawhide
-    pending_versions = sorted(
+    if pending_versions := sorted(
         {
             x["version"]
             for x in releases
@@ -177,12 +164,10 @@ def is_rawhide(version, releases):
             and x["state"] == "pending"
             and x["version"].isdigit()
         }
-    )
-    if not pending_versions:
+    ):
+        return version == pending_versions[-1]
+    else:
         raise ValueError("Unable to obtain a list of pending Fedora versions")
-    if version == pending_versions[-1]:
-        return True
-    return False
 
 
 def get_releases_from_bodhi(state=None):
@@ -203,18 +188,12 @@ def get_releases_from_bodhi(state=None):
         query_string = ""
 
         if state:
-            if not query_string:
-                query_string += "?"
-            else:
-                query_string += "&"
-            query_string += "state={state}".format(state=state)
+            query_string += "&" if query_string else "?"
+            query_string += f"state={state}"
 
         if page and page > 1:
-            if not query_string:
-                query_string += "?"
-            else:
-                query_string += "&"
-            query_string += "page={page}".format(page=page)
+            query_string += "&" if query_string else "?"
+            query_string += f"page={page}"
         return bodhi_url + query_string
 
     response_json, _ = http_get(_get_bodhi_url(state=state), as_json=True)

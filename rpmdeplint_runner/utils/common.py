@@ -92,7 +92,7 @@ def configure_logging_for_test(test_name, arch):
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    log_filename = "{testname}-{arch}.log".format(testname=test_name, arch=arch)
+    log_filename = f"{test_name}-{arch}.log"
     handler = logging.FileHandler(log_filename)
     handler.setFormatter(formatter)
 
@@ -103,7 +103,7 @@ def run_rpmdeplint(test_name, repo_urls, rpms_list, arch, work_dir):
     """Run rpmdeplint."""
     repo_params = []
     for name, url in repo_urls.items():
-        repo_params.extend(["--repo", "{name},{url}".format(name=name, url=url)])
+        repo_params.extend(["--repo", f"{name},{url}"])
 
     # pathlib.Path -> str
     rpms_list = [str(x) for x in rpms_list]
