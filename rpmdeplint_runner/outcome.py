@@ -12,6 +12,17 @@ class TmtExitCodes(Enum):
         return TmtExitCodes[return_code.name]
 
 
+class TmtResult(Enum):
+    PASSED = "pass"
+    FAILED = "fail"
+    ERROR = "error"
+    SKIPPED = "skip"
+
+    @classmethod
+    def from_exit_code(cls, exit_code):
+        return TmtResult[exit_code.name]
+
+
 class RpmdeplintCodes(Enum):
     PASSED = 0
     ERROR = 2

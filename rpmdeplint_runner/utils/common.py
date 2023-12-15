@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+from os import getenv
 from pathlib import Path
 from typing import Optional
 
@@ -77,7 +78,7 @@ def fix_arches(arches: list[str]) -> list[str]:
     return arches
 
 
-def configure_logging_for_test(test_name: str, arch: str) -> None:
+def configure_logging_for_test(work_dir: Path, test_name: str, arch: str) -> None:
     """Redirect everything rpmdeplint has to say to a file.
 
     Only log messages though, not stdout/stderr.
@@ -89,7 +90,8 @@ def configure_logging_for_test(test_name: str, arch: str) -> None:
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    log_filename = f"{test_name}-{arch}.log"
+    logs_dir = getenv("TMT_TEST_DATA", work_dir)
+    log_filename = f"{logs_dir}/{test_name}-{arch}.log"
     handler = logging.FileHandler(log_filename)
     handler.setFormatter(formatter)
 
@@ -113,7 +115,7 @@ def run_rpmdeplint(
 
     args = ["--quiet", test_name, "--arch", arch, *repo_params, *rpms_list]
 
-    configure_logging_for_test(test_name, arch)
+    configure_logging_for_test(work_dir=work_dir, test_name=test_name, arch=arch)
     from rpmdeplint import cli as rpmdeplint_cli
 
     return rpmdeplint_cli.main(args)
