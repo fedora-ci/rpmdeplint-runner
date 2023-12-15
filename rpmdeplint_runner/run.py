@@ -50,14 +50,6 @@ def parse_args():
         help="a comma-separated list of repository architectures",
     )
     prepare_parser.add_argument(
-        "--os",
-        dest="os",
-        required=False,
-        default="fedora",
-        choices=["fedora"],
-        help="operating system, e.g.: fedora",
-    )
-    prepare_parser.add_argument(
         "--workdir", dest="work_dir", required=True, help="workdir where to store files"
     )
 
@@ -123,7 +115,6 @@ def run_test(
     work_dir: Path,
     test_name: str,
     release_id: str,
-    os: str,  # TODO: unused
     task_ids: list[str],
     arch: str,
 ) -> None:
