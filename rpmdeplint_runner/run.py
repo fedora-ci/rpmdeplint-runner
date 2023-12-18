@@ -162,11 +162,13 @@ def save_results_and_exit(
     tmt_exit_code: TmtExitCodes, log_name: Optional[str] = None
 ) -> None:
     if getenv("TMT_TEST_DATA"):
-        results = {
-            "name": "/rpmdeplint",
-            "result": TmtResult.from_exit_code(tmt_exit_code).value,
-            "log": ["../output.txt", log_name] if log_name else ["../output.txt"],
-        }
+        results = [
+            {
+                "name": "/rpmdeplint",
+                "result": TmtResult.from_exit_code(tmt_exit_code).value,
+                "log": ["../output.txt", log_name] if log_name else ["../output.txt"],
+            }
+        ]
         with open(f"{getenv('TMT_TEST_DATA')}/results.yaml", "w") as file:
             yaml.dump(results, file)
         sys.exit(0)
