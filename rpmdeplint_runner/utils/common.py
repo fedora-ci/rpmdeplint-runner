@@ -23,7 +23,7 @@ def http_get(url, as_json=False):
             503,  # Service Unavailable
             504,  # Gateway Timeout
         ],
-        method_whitelist=["GET"],
+        allowed_methods=["GET"],
         backoff_factor=2,  # wait 1, 2, 4, 8, ... seconds between retries
     )
     adapter = HTTPAdapter(max_retries=retry_strategy)
