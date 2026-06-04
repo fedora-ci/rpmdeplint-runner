@@ -1,4 +1,4 @@
-FROM registry.fedoraproject.org/fedora:44
+FROM registry.fedoraproject.org/fedora:latest
 LABEL maintainer "Fedora-CI"
 LABEL description="rpmdeplint for fedora-ci"
 
